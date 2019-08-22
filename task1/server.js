@@ -19,9 +19,10 @@ http.createServer((req, res) => {
         (route.pathname === config.title_route || route.pathname === (config.title_route + '/'))
     ) {
 
+        eventEmitter.on(EVENT_TITLES_FETCHED, (titles) => writeTitlesPage(res, titles));
+
         let addresses = getAddresses(route.query);
         getTitles(addresses);
-        eventEmitter.on(EVENT_TITLES_FETCHED, (titles) => writeTitlesPage(res, titles));
 
     } else {
         res.writeHead(404, {'Content-Type': 'text/html'});
@@ -32,6 +33,9 @@ http.createServer((req, res) => {
 
 const getAddresses = query => {
     let {address: addresses} = query;
+
+    if (!addresses) return [];
+
     addresses = typeof addresses == 'string' ? [addresses] : addresses;
     return addresses;
 }
@@ -50,6 +54,11 @@ const getTitle = (html) => {
     return $('title').text();
 }
 const getTitles = (addresses) => {
+    if(addresses.length === 0)
+    {
+        eventEmitter.emit(EVENT_TITLES_FETCHED, addresses);
+        return;
+    }
 
     let titles = [];
     for (let i = 0; i < addresses.length; i++) {
